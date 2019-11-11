@@ -32,7 +32,7 @@ TODO:
 #include <SerialCommand.h>
 #include <AutoPID.h>
 #include <JC_Button.h>
-#include <my-utils.h>
+//#include <my-utils.h>
 
 SerialCommand SCmd; // The SerialCommand object
 
@@ -99,7 +99,7 @@ unsigned long stop_timeout_T = 0;
 #define TUV_MAX_TRY 3             //maximum try to heat TUV
 #define TUV_MIN_DIFF_ON 2         //minimum difference between t_boiler_in - t_boiler_out to turn on TUV
 #define TUV_MIN_DIFF_OFF 1.0      //diff between t_boiler_in - t_boiler_out, when stop TUV PUMP
-const double MAX_TUV_TEMP = 75.0; // kdy už se TUV bere jako natopene
+const double MAX_TUV_TEMP = 70.0; // kdy už se TUV bere jako natopene
 
 #define FAILSAFE_MODE 5
 #define BOILER_IN_T 70
@@ -216,7 +216,7 @@ void setup(void)
 
   myPID_in.setBangBang(6);
   myPID_in.setTimeStep(1000);
-  myPID_out.setBangBang((FAILURETEMPERATURE - set_boiler_out)-1);
+  myPID_out.setBangBang((FAILURETEMPERATURE - set_boiler_out) - 1);
   myPID_out.setTimeStep(1000);
   Serial.println("...start...");
   delay(1000);
@@ -267,7 +267,8 @@ void modeChange()
       mode = 1;
       prilozeno = 1;
     }
-    if ((t_boiler_out > VYHASNUTO + 4 * TEMPHYST) || t_komin > FAN_VYHASNUTO_TEMP + TEMPHYST)
+
+    if ((t_boiler_out > VYHASNUTO + 4 * TEMPHYST) || (t_komin > FAN_VYHASNUTO_TEMP + TEMPHYST))
     { // není nahodou moc teplo?
       mode = 4;
       prilozeno = 0;
@@ -351,9 +352,19 @@ void modeChange()
     { // znovu prilozeno
       mode = 1;
     }
-    if ((t_boiler_out < VYHASNUTO) && (t_komin < FAN_VYHASNUTO_TEMP))
+    if ((t_boiler_out < VYHASNUTO))
     {
-      mode = 0;
+      if ((t_komin != t_komin))
+      {
+        mode = 0;
+      }
+      else
+      {
+        if (t_komin < FAN_VYHASNUTO_TEMP)
+        {
+          mode = 0;
+        }
+      }
     }
     if (last_mode != mode)
     {
@@ -661,6 +672,10 @@ bool temperature_read(void)
     lastT = millis();
 
     t_komin = thermocouple.readCelsius(); //read thermocouple with dalas delay
+    if (t_komin < 10.0)
+    {
+      t_komin = 0.0 / 0.0;
+    }
     return true;
   }
   return false;
