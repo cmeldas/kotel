@@ -90,10 +90,10 @@ unsigned long last_mode_start = 0;
 unsigned long stop_timeout_T = 0;
 
 // konstanty
-#define VYHASNUTO 40.0 // od kdy se má zapnout normální režim
+#define VYHASNUTO 35.0 // od kdy se má zapnout normální režim
 #define TEMPHYST 3.0
 #define FAILURETEMPERATURE 95.0   //STOP PID, just open valve and
-#define VENTILATORMAXTEPLOTA 75.0 //TEPLOTA VODY KDY SE NIKDY NESEPNE (teplota na výstupu)
+#define VENTILATORMAXTEPLOTA 70.0 //TEPLOTA VODY KDY SE NIKDY NESEPNE (teplota na výstupu)
 #define FAN_VYHASNUTO_TEMP 150.0  // Teplota na ventilátoru od kdy se bere, že kotel hoøí
 
 #define TUV_MAX_TRY 3             //maximum try to heat TUV
@@ -101,9 +101,11 @@ unsigned long stop_timeout_T = 0;
 #define TUV_MIN_DIFF_OFF 1.0      //diff between t_boiler_in - t_boiler_out, when stop TUV PUMP
 const double MAX_TUV_TEMP = 70.0; // kdy už se TUV bere jako natopene
 
+#define STOP_TIMEOUT 18000000 //za jak dlouho se vypne kotel pri mode prilozit
+
 #define FAILSAFE_MODE 5
-#define BOILER_IN_T 70
-#define BOILER_IN_TUV_T 75
+#define BOILER_IN_T 70     //PID boiler in
+#define BOILER_IN_TUV_T 75 // PID boiler in when TUV
 
 double set_boiler_in = BOILER_IN_T;
 double set_boiler_out = 90.0;
@@ -252,7 +254,6 @@ void valve(int x = 0)
   }
 }
 
-#define STOP_TIMEOUT 1200000
 void modeChange()
 {
   static int last_mode = 0;
@@ -352,7 +353,7 @@ void modeChange()
     { // znovu prilozeno
       mode = 1;
     }
-    if ((t_boiler_out < VYHASNUTO))
+    if ((t_boiler_out < VYHASNUTO - 3 * TEMPHYST))
     {
       if ((t_komin != t_komin))
       {
@@ -472,8 +473,8 @@ bool fanControl(void)
         digitalWrite(BOILER_FAN_P, HIGH);
       }
       break;
-    case 3: // vyhasina
-      digitalWrite(BOILER_FAN_P, LOW);
+    case 3: // vyhasina, v tomto miste je uz vyhoreno, doufame, ze nekdo prilozi, neni potreba rozfoukavat to malo co zbylo
+      digitalWrite(BOILER_FAN_P, HIGH);
       break;
     case 4: // vychlazeni
       digitalWrite(BOILER_FAN_P, LOW);
