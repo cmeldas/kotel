@@ -94,7 +94,7 @@ unsigned long stop_timeout_T = 0;
 #define TEMPHYST 3.0
 #define FAILURETEMPERATURE 95.0   //STOP PID, just open valve and
 #define VENTILATORMAXTEPLOTA 70.0 //TEPLOTA VODY KDY SE NIKDY NESEPNE (teplota na výstupu)
-#define FAN_VYHASNUTO_TEMP 150.0  // Teplota na ventilátoru od kdy se bere, že kotel hoøí
+#define FAN_VYHASNUTO_TEMP 60.0   // Teplota na ventilátoru od kdy se bere, že kotel hoøí
 
 #define TUV_MAX_TRY 3             //maximum try to heat TUV
 #define TUV_MIN_DIFF_ON 2         //minimum difference between t_boiler_in - t_boiler_out to turn on TUV
@@ -707,6 +707,7 @@ bool TUV(void)
 
   switch (TUV_mode)
   {
+#define TUV_REENABLE_T_DIFF 10 //teplota o kterou kdyz spadne teplota TUV se znovu zapne vyhrivani
   case 0:
     if (TUV_reguest && (mode != 0)) //get ready TUV
     {
@@ -744,6 +745,11 @@ bool TUV(void)
     {
       TUV_mode = 0;
     }
+    if ((t_boiler_out > MAX_TUV_TEMP + 2 * TEMPHYST) && (t_TUV_out < MAX_TUV_TEMP - TUV_REENABLE_T_DIFF) && (mode == 2))
+    {
+      TUV_mode = 2; //znovu zatop
+    }
+
     break;
   default:
     TUV_mode = 0;
