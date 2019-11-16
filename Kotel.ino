@@ -92,10 +92,11 @@ unsigned long stop_timeout_T = 0;
 // konstanty
 #define VYHASNUTO 35.0 // od kdy se má zapnout normální režim
 #define TEMPHYST 3.0
-#define FAILURETEMPERATURE 95.0   //STOP PID, just open valve and
+#define FAILURETEMPERATURE 90.0   //STOP PID, just open valve and
 #define VENTILATORMAXTEPLOTA 70.0 //TEPLOTA VODY KDY SE NIKDY NESEPNE (teplota na výstupu)
-#define FAN_VYHASNUTO_TEMP 60.0   // Teplota na ventilátoru od kdy se bere, že kotel hoøí
+#define FAN_VYHASNUTO_TEMP 45.0   // Teplota na ventilátoru od kdy se bere, že kotel hoøí - TEPLOTA KOMINA
 
+#define TUV_REENABLE_T_DIFF 8    //teplota o kterou kdyz spadne teplota TUV se znovu zapne vyhrivani (zakomentovani vypne funkci)
 #define TUV_MAX_TRY 3             //maximum try to heat TUV
 #define TUV_MIN_DIFF_ON 2         //minimum difference between t_boiler_in - t_boiler_out to turn on TUV
 #define TUV_MIN_DIFF_OFF 1.0      //diff between t_boiler_in - t_boiler_out, when stop TUV PUMP
@@ -108,7 +109,7 @@ const double MAX_TUV_TEMP = 70.0; // kdy už se TUV bere jako natopene
 #define BOILER_IN_TUV_T 75 // PID boiler in when TUV
 
 double set_boiler_in = BOILER_IN_T;
-double set_boiler_out = 90.0;
+double set_boiler_out = 85.0;
 
 bool blik_p, slow_p, fast_p = 0; //for blinking
 int disp_mode, TUV_mode, mode = 0;
@@ -707,7 +708,7 @@ bool TUV(void)
 
   switch (TUV_mode)
   {
-#define TUV_REENABLE_T_DIFF 10 //teplota o kterou kdyz spadne teplota TUV se znovu zapne vyhrivani
+
   case 0:
     if (TUV_reguest && (mode != 0)) //get ready TUV
     {
@@ -716,7 +717,7 @@ bool TUV(void)
     }
     break;
   case 1: //wait
-    if (((t_boiler_out - t_boiler_in) > TUV_MIN_DIFF_ON) && (t_TUV_out < t_boiler_out + TEMPHYST))
+    if (((t_boiler_out - set_boiler_in) > TUV_MIN_DIFF_ON) && (t_TUV_out < t_boiler_out + TEMPHYST))
     {
       TUV_mode = 2;
     }
@@ -727,7 +728,7 @@ bool TUV(void)
       TUV_mode = 3;
     }
 
-    if (((t_boiler_out - t_boiler_in) < TUV_MIN_DIFF_OFF) && (t_TUV_out > t_boiler_out))
+    if (((t_boiler_out - t_boiler_in) < TUV_MIN_DIFF_OFF) || (t_TUV_out > t_boiler_out))
     {
       TUV_mode = 1;
       TUV_try++;
@@ -745,10 +746,12 @@ bool TUV(void)
     {
       TUV_mode = 0;
     }
+#ifdef TUV_REENABLE_T_DIFF
     if ((t_boiler_out > MAX_TUV_TEMP + 2 * TEMPHYST) && (t_TUV_out < MAX_TUV_TEMP - TUV_REENABLE_T_DIFF) && (mode == 2))
     {
       TUV_mode = 2; //znovu zatop
     }
+#endif
 
     break;
   default:
