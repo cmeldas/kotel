@@ -96,7 +96,7 @@ unsigned long stop_timeout_T = 0;
 #define VENTILATORMAXTEPLOTA 70.0 //TEPLOTA VODY KDY SE NIKDY NESEPNE (teplota na výstupu)
 #define FAN_VYHASNUTO_TEMP 45.0   // Teplota na ventilátoru od kdy se bere, že kotel hoøí - TEPLOTA KOMINA
 
-#define TUV_REENABLE_T_DIFF 8    //teplota o kterou kdyz spadne teplota TUV se znovu zapne vyhrivani (zakomentovani vypne funkci)
+#define TUV_REENABLE_T_DIFF 8     //teplota o kterou kdyz spadne teplota TUV se znovu zapne vyhrivani (zakomentovani vypne funkci)
 #define TUV_MAX_TRY 3             //maximum try to heat TUV
 #define TUV_MIN_DIFF_ON 2         //minimum difference between t_boiler_in - t_boiler_out to turn on TUV
 #define TUV_MIN_DIFF_OFF 1.0      //diff between t_boiler_in - t_boiler_out, when stop TUV PUMP
@@ -258,9 +258,9 @@ void valve(int x = 0)
 void modeChange()
 {
   static int last_mode = 0;
-  static int prilozeno = 0;
+  static int prilozeno = 1;
+  static float lastTempMode = 0.0; //save temperature when mode is entered
 
-  static float last_temp = 0.0;
   switch (mode)
   {
   case 0: // STOP do nothing
@@ -272,7 +272,7 @@ void modeChange()
 
     if ((t_boiler_out > VYHASNUTO + 4 * TEMPHYST) || (t_komin > FAN_VYHASNUTO_TEMP + TEMPHYST))
     { // není nahodou moc teplo?
-      mode = 4;
+      mode = 1;
       prilozeno = 0;
       break;
     }
@@ -298,7 +298,7 @@ void modeChange()
       prilozeno = 0;
       mode = 2;
     }
-    if ((t_boiler_out < VYHASNUTO - TEMPHYST) && prilozeno == 0) // prilozeno to know is is just start to fire
+    if ((t_boiler_out < VYHASNUTO - TEMPHYST) && (prilozeno == 0) && (t_komin < FAN_VYHASNUTO_TEMP - TEMPHYST)) // prilozeno to know is is just start to fire
     {
       mode = 4;
     }
@@ -307,7 +307,18 @@ void modeChange()
     {
       last_mode_start = millis();
       disp_mode = mode;
+      lastTempMode = t_boiler_out;
+      last_mode_start = millis();
     }
+
+    // Po nejakem case teplota nevzrostla, asi vyhasina
+
+    if (((last_mode_start + (1000 * 60 * 30)) < millis()) && (lastTempMode - 3 > t_boiler_out))
+    {
+      mode = 4;
+      prilozeno = 0;
+    }
+
     last_mode = 1;
     break;
 
@@ -353,6 +364,7 @@ void modeChange()
     if (BT1.wasReleased())
     { // znovu prilozeno
       mode = 1;
+      prilozeno = 1;
     }
     if ((t_boiler_out < VYHASNUTO - 3 * TEMPHYST))
     {
@@ -362,7 +374,7 @@ void modeChange()
       }
       else
       {
-        if (t_komin < FAN_VYHASNUTO_TEMP)
+        if (t_komin < FAN_VYHASNUTO_TEMP - TEMPHYST)
         {
           mode = 0;
         }
@@ -443,7 +455,7 @@ bool pumpControl(void)
   return !digitalRead(PUMP_P);
 }
 
-#define FAN_TIME_PRIKLADANI 60000
+#define FAN_TIME_PRIKLADANI 120000
 bool fanControl(void)
 {
 
@@ -717,7 +729,7 @@ bool TUV(void)
     }
     break;
   case 1: //wait
-    if (((t_boiler_out - set_boiler_in) > TUV_MIN_DIFF_ON) && (t_TUV_out < t_boiler_out + TEMPHYST))
+    if (((t_boiler_out - set_boiler_in) > TUV_MIN_DIFF_ON) && (t_TUV_out < t_boiler_out + TEMPHYST) && (t_boiler_out > MAX_TUV_TEMP) && mode == 2)
     {
       TUV_mode = 2;
     }
@@ -747,9 +759,9 @@ bool TUV(void)
       TUV_mode = 0;
     }
 #ifdef TUV_REENABLE_T_DIFF
-    if ((t_boiler_out > MAX_TUV_TEMP + 2 * TEMPHYST) && (t_TUV_out < MAX_TUV_TEMP - TUV_REENABLE_T_DIFF) && (mode == 2))
+    if ((t_TUV_out < MAX_TUV_TEMP - TUV_REENABLE_T_DIFF) )
     {
-      TUV_mode = 2; //znovu zatop
+      TUV_mode = 1; //znovu wait
     }
 #endif
 
@@ -1192,11 +1204,12 @@ void loop(void)
   disp();
   valve_control();
   modeChange();
+  failsafeCheck();
   pumpControl();
   ledControl();
   TUV();
   fanControl();
-  failsafeCheck();
+  
 
   //BTN
   BT1.read();
