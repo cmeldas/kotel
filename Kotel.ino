@@ -759,7 +759,7 @@ bool TUV(void)
       TUV_mode = 0;
     }
 #ifdef TUV_REENABLE_T_DIFF
-    if ((t_TUV_out < MAX_TUV_TEMP - TUV_REENABLE_T_DIFF) )
+    if ((t_TUV_out < MAX_TUV_TEMP - TUV_REENABLE_T_DIFF))
     {
       TUV_mode = 1; //znovu wait
     }
@@ -1130,16 +1130,18 @@ void disp(void)
 
   case 6: // valve
     lcd.setCursor(0, 0);
-    lcd.print("pid_IN  ------ ");
+    lcd.print("pid_IN  ||  ");
     lcd.print(outputVal_in, 0);
+    lcd.print("  ");
     lcd.setCursor(0, 1);
     lcd.print("t_IN : ");
     lcd.print(t_boiler_in, 1);
     lcd.print(" #set: ");
     lcd.print(set_boiler_in, 0);
     lcd.setCursor(0, 2);
-    lcd.print("pid_OUT ------ ");
+    lcd.print("pid_OUT ||  ");
     lcd.print(outputVal_out, 0);
+    lcd.print("  ");
     lcd.setCursor(0, 3);
     lcd.print("t_OUT: ");
     lcd.print(t_boiler_out, 1);
@@ -1157,7 +1159,7 @@ void disp(void)
     lcd.print(t_boiler_in, 0);
     lcd.setCursor(0, 2);
     lcd.print("Komin :  ");
-    lcd.print(t_komin);
+    lcd.print(t_komin, 0);
     lcd.print(" | Dum:");
     lcd.setCursor(0, 3);
     lcd.print("Vstup: ");
@@ -1209,7 +1211,6 @@ void loop(void)
   ledControl();
   TUV();
   fanControl();
-  
 
   //BTN
   BT1.read();
