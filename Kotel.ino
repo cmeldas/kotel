@@ -1062,9 +1062,9 @@ void disp(void)
     lcd.setCursor(0, 2);
     lcd.print("Vystup kotle:  ");
     lcd.print(t_boiler_out, 1);
-    lpg.setMinValue(0);
-    lpg.setMaxValue(set_boiler_out - set_boiler_in);
-    lpg.reDraw(t_boiler_out - t_boiler_in);
+    lpg.setMinValue(t_boiler_in);
+    lpg.setMaxValue(set_boiler_out);
+    lpg.reDraw(t_boiler_out);
 
     break;
   case 3:
