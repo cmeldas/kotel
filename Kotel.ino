@@ -92,8 +92,8 @@ unsigned long stop_timeout_T = 0;
 // konstanty
 #define VYHASNUTO 35.0 // od kdy se má zapnout normální režim
 #define TEMPHYST 3.0
-#define FAILURETEMPERATURE 90.0   //STOP PID, just open valve and
-#define VENTILATORMAXTEPLOTA 70.0 //TEPLOTA VODY KDY SE NIKDY NESEPNE (teplota na výstupu)
+#define FAILURETEMPERATURE 93.0   //STOP PID, just open valve and
+#define VENTILATORMAXTEPLOTA 75.0 //TEPLOTA VODY KDY SE NIKDY NESEPNE (teplota na výstupu)
 #define FAN_VYHASNUTO_TEMP 45.0   // Teplota na ventilátoru od kdy se bere, že kotel hoøí - TEPLOTA KOMINA
 
 #define TUV_REENABLE_T_DIFF 8     //teplota o kterou kdyz spadne teplota TUV se znovu zapne vyhrivani (zakomentovani vypne funkci)
@@ -105,11 +105,11 @@ const double MAX_TUV_TEMP = 70.0; // kdy už se TUV bere jako natopene
 #define STOP_TIMEOUT 18000000 //za jak dlouho se vypne kotel pri mode prilozit
 
 #define FAILSAFE_MODE 5
-#define BOILER_IN_T 70     //PID boiler in
-#define BOILER_IN_TUV_T 75 // PID boiler in when TUV
+#define BOILER_IN_T 75     //PID boiler in
+#define BOILER_IN_TUV_T (BOILER_IN_T + 3 ) // PID boiler in when TUV
 
 double set_boiler_in = BOILER_IN_T;
-double set_boiler_out = 85.0;
+double set_boiler_out = 87.0;
 
 bool blik_p, slow_p, fast_p = 0; //for blinking
 int disp_mode, TUV_mode, mode = 0;
@@ -124,9 +124,9 @@ double KP_in = 1500.0;
 double KI_in = 1.0;
 double KD_in = 5.0;
 
-double KP_out = 500.0;
-double KI_out = 5.0;
-double KD_out = 0.0;
+double KP_out = 800.0;
+double KI_out = 1.0;
+double KD_out = 2.0;
 
 AutoPID myPID_in(&t_boiler_in, &set_boiler_in, &outputVal_in, OUTPUT_MIN, OUTPUT_MAX, KP_in, KI_in, KD_in);
 AutoPID myPID_out(&t_boiler_out, &set_boiler_out, &outputVal_out, OUTPUT_MIN, OUTPUT_MAX, KP_out, KI_out, KD_out);
@@ -219,7 +219,7 @@ void setup(void)
 
   myPID_in.setBangBang(6);
   myPID_in.setTimeStep(1000);
-  myPID_out.setBangBang((FAILURETEMPERATURE - set_boiler_out) - 1);
+  myPID_out.setBangBang(4);
   myPID_out.setTimeStep(1000);
   Serial.println("...start...");
   delay(1000);
