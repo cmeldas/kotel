@@ -33,6 +33,9 @@ TODO:
 #include <AutoPID.h>
 #include <JC_Button.h>
 //#include <my-utils.h>
+#include <avr/wdt.h>
+
+#define WDTO_TIME WDTO_8S
 
 SerialCommand SCmd; // The SerialCommand object
 
@@ -105,8 +108,8 @@ const double MAX_TUV_TEMP = 70.0; // kdy už se TUV bere jako natopene
 #define STOP_TIMEOUT 18000000 //za jak dlouho se vypne kotel pri mode prilozit
 
 #define FAILSAFE_MODE 5
-#define BOILER_IN_T 75     //PID boiler in
-#define BOILER_IN_TUV_T (BOILER_IN_T + 3 ) // PID boiler in when TUV
+#define BOILER_IN_T 75                    //PID boiler in
+#define BOILER_IN_TUV_T (BOILER_IN_T + 3) // PID boiler in when TUV
 
 double set_boiler_in = BOILER_IN_T;
 double set_boiler_out = 87.0;
@@ -145,7 +148,7 @@ bool TUV(void);
 
 void setup(void)
 {
-
+  wdt_enable(WDTO_TIME);
   // start serial port
   Serial.begin(115200);
   Serial.print("Kotel:  ");
@@ -206,7 +209,7 @@ void setup(void)
   sensors.requestTemperatures();
   temperature_read();
   sensors.setWaitForConversion(false);
-
+  wdt_reset();
   // Get dalas count
   Serial.print("Found  ");
   Serial.print(sensors.getDeviceCount(), DEC);
@@ -216,7 +219,7 @@ void setup(void)
   {
   } //wait until temp sensor updated
   print_temperatures();
-
+  wdt_reset();
   myPID_in.setBangBang(6);
   myPID_in.setTimeStep(1000);
   myPID_out.setBangBang(4);
@@ -1217,4 +1220,5 @@ void loop(void)
   BT2.read();
   BTN.read();
   BTP.read();
+  wdt_reset();
 }
